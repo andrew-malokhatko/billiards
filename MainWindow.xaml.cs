@@ -32,38 +32,24 @@ namespace billiards
             InitializeComponent();
             this.MouseLeftButtonDown += new MouseButtonEventHandler(OnMouseLeftButtonDown);
             this.MouseLeftButtonUp += new MouseButtonEventHandler(OnMouseLeftButtonUp);
-            ball = new Ball(420, 250, Brushes.Black, 0);
-            ball1 = new Ball( 440, 200, Brushes.Yellow, 1);
-            ball2 = new Ball(400, 200, Brushes.Red, 2);
+            ball = new Ball(canvas, 420, 400, Brushes.Black);
+            ball1 = new Ball(canvas, 400, 200, Brushes.Red);
+            ball2 = new Ball(canvas, 440, 200, Brushes.Green);
 
             balls.Add(ball1);
             balls.Add(ball);
             balls.Add(ball2);
 
-            foreach(Ball ball in balls)
-            {
-                canvas.Children.Add(ball.UiElement);
-            }
-
             updateTimer.Tick += new EventHandler(update);
-            updateTimer.Interval = new TimeSpan(0, 0, 0, 0, 20);
+            updateTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
             updateTimer.Start();
         }
 
         public void update(object sender, EventArgs e)
         {
-            List<Ball> ballsCopy = new List<Ball>();
-            foreach (Ball b in balls)
-            {
-                Ball newBall = b.Clone();
-                ballsCopy.Add(newBall);
-            }
-
-            foreach(Ball ball in balls)
-            {
-                ball.update(ballsCopy, false);
-            }
-
+            ball.update(balls, true);
+            ball1.update(balls, false);
+            ball2.update(balls, false);
             lbl.Content = (Convert.ToInt32(ball.X), Convert.ToInt32(ball.Y));
         }
 

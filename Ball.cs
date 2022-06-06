@@ -23,9 +23,9 @@ namespace billiards
         public int radius;
         public double X;
         public double Y;
-        public int number = 0;
+        public bool d = true;
 
-        public Ball(int x, int y, SolidColorBrush brush1, int number)
+        public Ball(Canvas canvas, int x, int y, SolidColorBrush brush1)
         {
             SolidColorBrush brush = new SolidColorBrush();
             brush.Color = Color.FromArgb(0, 0, 0, 0);
@@ -33,92 +33,47 @@ namespace billiards
             UiElement.Fill = brush;
             UiElement.StrokeThickness = 5;
             UiElement.Stroke = brush1;
-            this.number = number;
             UiElement.Width = size;
             UiElement.Height = size;
             setPos(x, y);
 
             radius = size / 2;
 
-            Canvas.SetLeft(UiElement, X);
-            Canvas.SetTop(UiElement, Y);
+            canvas.Children.Add(UiElement);
         }
 
-        public Ball()
+        public void update(List<Ball> balls, bool main)
         {
-            ;
-        }
-
-        public Ball Clone()
-        {
-            Ball result = new Ball();
-
-            result.UiElement = this.UiElement;
-            result.velocity = this.velocity;
-            result.size = this.size;
-            result.radius = this.radius;
-            result.X = this.X;
-            result.Y = this.Y;
-            result.number = this.number;
-
-            return result;
-        }
-
-        public void update(List<Ball> balls, bool main) //i can do smth that will check will ball collide on the next move and if yes dont let it to pass another balls border  
-        {
-            if (velocity.X == 0 && velocity.Y == 0)
-            {
-                return;
-            }
-
             velocity = Vector.Subtract(velocity, new Vector(velocity.X * 0.02, velocity.Y * 0.02));
 
             X += velocity.X;
             Y += velocity.Y;
 
-            if (Double.IsNaN(X) || Double.IsNaN(Y))
-            {
-                ;
-            }
-
-            Vector oldVelo = velocity;
-            List<Vector> velocities = new List<Vector>();
-            List<Ball> collidedBalls = checkCollision(balls);
-            foreach(Ball ball in collidedBalls)
+            Ball ball = checkCollision(balls);
+            if (ball != null)
             {
                 Vector n = new Vector(X - ball.X, Y - ball.Y);
                 Vector veloN = Vector.Divide(velocity, Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y));
-                while (n.Length < radius * 2)
+
+                while(n.Length < radius * 2)
                 {
                     X -= veloN.X;
                     Y -= veloN.Y;
                     n = new Vector(X - ball.X, Y - ball.Y);
-                    if (Double.IsNaN(X) || Double.IsNaN(Y))
-                    {
-                        ;
-                    }
                 }
-            }
+
+                onCollision(ball);
+            } 
 
             Canvas.SetLeft(UiElement, X);
             Canvas.SetTop(UiElement, Y);
         }
 
-        public Vector countVelocities(List<Vector> velocities)
+        public void onCollision(Ball ball)
         {
-            Vector finalVelo = new Vector(0,0);
-            for(int i = 0; i < velocities.Count(); i++)
-            {
-                finalVelo = Vector.Add(finalVelo, velocities[i]);
-            }
-            return finalVelo;
-        }
-
-        public void onCollision(Ball ball, Vector oldVelo)
-        {
-
-            Vector n = new Vector(oldVelo.X - ball.X, oldVelo.Y - ball.Y);
+            Vector n = new Vector(this.X - ball.X, this.Y - ball.Y);
             Vector un = Vector.Divide(n, Math.Sqrt(n.X * n.X + n.Y * n.Y));
+
             Vector ut = new Vector(-un.Y, un.X);
             
             Vector v1 = new Vector(velocity.X, velocity.Y);
@@ -140,12 +95,9 @@ namespace billiards
             Vector v1final = Vector.Add(finalv1nvec, finalv1tvec);
             Vector v2final = Vector.Add(finalv2nvec, finalv2tvec);
 
-            if (Double.IsNaN(v1final.X) || Double.IsNaN(v1final.Y))
-            {
-                ;
-            }
+            this.velocity = v1final;
             ball.velocity = v2final;
-            this.velocity =  v1final;
+
         }
 
         public double DotProduct(Vector vector1, Vector vector2)
@@ -167,19 +119,18 @@ namespace billiards
             return Math.Sqrt(Math.Pow(x_dist, 2) + Math.Pow(y_dist, 2));
         }
 
-        public List<Ball> checkCollision(List<Ball> balls)
+        public Ball checkCollision(List<Ball> balls)
         {
-            List<Ball> result = new List<Ball>();
             foreach(Ball ball in balls)
             {
-                if (ball.number == this.number) {continue;}
+                if (ball == this) {continue;}
 
                 if (getDistance(X, Y, ball.X, ball.Y) <= radius * 2)
                 {
-                    result.Add(ball);
+                    return ball;
                 }
             }
-            return result;
+            return null;
         }
     }
 }
