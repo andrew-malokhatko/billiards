@@ -10,23 +10,32 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Diagnostics;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace billiards
 {
+    public struct BallState
+    {
+        public Vector velocity;
+        public double x;
+        public double y;
+        public int number;
+    }
+
     public class Ball
     {
         public Ellipse UiElement = new Ellipse();
-        public Vector velocity = new Vector(0, 0);
         public int size = 40;
-        public int radius;
-        public double X;
-        public double Y;
-        public bool d = true;
+        public static int radius = 20;
 
-        public Ball(Canvas canvas, int x, int y, SolidColorBrush brush1)
+        public BallState state;
+
+        public Ball(int number, int x, int y, SolidColorBrush brush1)
         {
+            this.state.number = number;
+
             SolidColorBrush brush = new SolidColorBrush();
             brush.Color = Color.FromArgb(0, 0, 0, 0);
 
@@ -38,46 +47,110 @@ namespace billiards
             setPos(x, y);
 
             radius = size / 2;
-
-            canvas.Children.Add(UiElement);
         }
 
-        public void update(List<Ball> balls, bool main)
+        public Ball() {; }
+
+        //public List<BallState> update(List<Ball> balls)
+        public void update(List<Ball> balls)// divide update into 2 functios first will add velo and second will count new velo and situationally move balls a bit
         {
-            velocity = Vector.Subtract(velocity, new Vector(velocity.X * 0.02, velocity.Y * 0.02));
+            List<BallState> result = new List<BallState>();
 
-            X += velocity.X;
-            Y += velocity.Y;
+            state.velocity = Vector.Subtract(state.velocity, new Vector(state.velocity.X * 0.02, state.velocity.Y * 0.02));
 
-            Ball ball = checkCollision(balls);
-            if (ball != null)
+            state.x += state.velocity.X;
+            state.y += state.velocity.Y;
+        }
+
+        public static Dictionary<int, Vector> Collide(Ball b1, Ball b2, List<Ball> ballsCopy)
+        {
+            /*Vector n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
+
+            Vector veloN1 = Vector.Divide(b1.state.velocity, 
+                Math.Sqrt(b1.state.velocity.X * b1.state.velocity.X + b1.state.velocity.Y * b1.state.velocity.Y));
+
+            Vector veloN2 = Vector.Divide(b2.state.velocity,
+                Math.Sqrt(b2.state.velocity.X * b2.state.velocity.X + b2.state.velocity.Y * b2.state.velocity.Y));
+
+            Vector veloN = new Vector();
+
+            if (Double.IsNaN(veloN1.Length))
             {
-                Vector n = new Vector(X - ball.X, Y - ball.Y);
-                Vector veloN = Vector.Divide(velocity, Math.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y));
+                veloN = veloN2;
+            }
+            else if(Double.IsNaN(veloN2.Length))
+            {
+                veloN = veloN1;
+            }
+            else
+            {
+                veloN = veloN1.Length > veloN2.Length ? veloN1 : veloN2;
+            }
 
-                while(n.Length < radius * 2)
+            while (n.Length < radius * 2)
+            {
+                if (veloN.Length > veloN1.Length - 0.001 && veloN.Length < veloN1.Length + 0.001)
                 {
-                    X -= veloN.X;
-                    Y -= veloN.Y;
-                    n = new Vector(X - ball.X, Y - ball.Y);
+                    b1.state.x -= veloN1.X; // try to change only copy of the ball
+                    b1.state.y -= veloN1.Y;
                 }
-
-                onCollision(ball);
-            } 
-
-            Canvas.SetLeft(UiElement, X);
-            Canvas.SetTop(UiElement, Y);
+                else
+                {
+                    b2.state.x -= veloN2.X;
+                    b2.state.y -= veloN2.Y;
+                }
+                n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
+            }*/
+            Dictionary<int, Vector> newVelocities = CalculateVelocity(b1, b2);
+            return newVelocities;
         }
 
-        public void onCollision(Ball ball)
+        public Ball Clone()
         {
-            Vector n = new Vector(this.X - ball.X, this.Y - ball.Y);
+            Ball result = new Ball();
+
+            result.UiElement = this.UiElement;
+            result.size = this.size;
+            result.state = this.state;
+
+            return result;
+        }
+
+        public static List<Tuple<Ball, Ball>> allCollisions(List<Ball> balls)
+        {
+            List<Tuple<Ball, Ball>> result = new List<Tuple<Ball, Ball>>();
+            foreach(Ball b1 in balls)
+            {
+                foreach(Ball b2 in balls)
+                {
+                    if (b1 == b2) { continue; }
+
+                    if (getDistance(b1.state.x, b1.state.y, b2.state.x, b2.state.y) <= radius * 2)
+                    {
+                        Tuple<Ball, Ball> t = Tuple.Create(
+                            Math.Min(b1.state.number, b2.state.number) == b1.state.number ? b1 : b2,
+                            Math.Max(b1.state.number, b2.state.number) == b1.state.number ? b1 : b2);
+                        if (result.Contains(t) == false)
+                        {
+                            result.Add(t);
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        public static Dictionary<int, Vector> CalculateVelocity(Ball b1, Ball b2)
+        {
+            Dictionary<int, Vector> result = new Dictionary<int, Vector>();
+
+            Vector n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
             Vector un = Vector.Divide(n, Math.Sqrt(n.X * n.X + n.Y * n.Y));
 
             Vector ut = new Vector(-un.Y, un.X);
-            
-            Vector v1 = new Vector(velocity.X, velocity.Y);
-            Vector v2 = new Vector(ball.velocity.X, ball.velocity.Y);
+
+            Vector v1 = new Vector(b1.state.velocity.X, b1.state.velocity.Y);
+            Vector v2 = new Vector(b2.state.velocity.X, b2.state.velocity.Y);
 
             double v1n = DotProduct(un, v1);
             double v1t = DotProduct(ut, v1);
@@ -95,23 +168,24 @@ namespace billiards
             Vector v1final = Vector.Add(finalv1nvec, finalv1tvec);
             Vector v2final = Vector.Add(finalv2nvec, finalv2tvec);
 
-            this.velocity = v1final;
-            ball.velocity = v2final;
+            result.Add(b1.state.number, v1final);
+            result.Add(b2.state.number, v2final);
 
+            return result;
         }
 
-        public double DotProduct(Vector vector1, Vector vector2)
+        public static double DotProduct(Vector vector1, Vector vector2)
         {
             return vector1.X * vector2.X + vector1.Y * vector2.Y;
         }
 
         public void setPos(double x, double y)
         {
-            X = x;
-            Y = y;
+            state.x = x;
+            state.y = y;
         }
 
-        public double getDistance(double x1, double y1, double x2, double y2)
+        public static double getDistance(double x1, double y1, double x2, double y2)
         {
             double x_dist = x1 - x2;
             double y_dist = y1 - y2;
@@ -119,18 +193,20 @@ namespace billiards
             return Math.Sqrt(Math.Pow(x_dist, 2) + Math.Pow(y_dist, 2));
         }
 
-        public Ball checkCollision(List<Ball> balls)
+        public List<Ball> checkCollision(List<Ball> balls)
         {
-            foreach(Ball ball in balls)
-            {
-                if (ball == this) {continue;}
+            List<Ball> result = new List<Ball>();
 
-                if (getDistance(X, Y, ball.X, ball.Y) <= radius * 2)
+            foreach (Ball ball in balls)
+            {
+                if (ball.state.number == this.state.number) {continue;}
+
+                if (getDistance(state.x, state.y, ball.state.x, ball.state.y) <= radius * 2)
                 {
-                    return ball;
+                    result.Add(ball);
                 }
             }
-            return null;
+            return result;
         }
     }
 }

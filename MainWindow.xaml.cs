@@ -32,13 +32,18 @@ namespace billiards
             InitializeComponent();
             this.MouseLeftButtonDown += new MouseButtonEventHandler(OnMouseLeftButtonDown);
             this.MouseLeftButtonUp += new MouseButtonEventHandler(OnMouseLeftButtonUp);
-            ball = new Ball(canvas, 420, 400, Brushes.Black);
-            ball1 = new Ball(canvas, 400, 200, Brushes.Red);
-            ball2 = new Ball(canvas, 440, 200, Brushes.Green);
+            ball = new Ball(0, 420, 300, Brushes.Black);
+            ball1 = new Ball(1, 400, 200, Brushes.Red);
+            ball2 = new Ball(2, 440, 200, Brushes.Green);
 
-            balls.Add(ball1);
             balls.Add(ball);
+            balls.Add(ball1);
             balls.Add(ball2);
+
+            foreach (Ball ball in balls)
+            {
+                canvas.Children.Add(ball.UiElement);
+            }
 
             updateTimer.Tick += new EventHandler(update);
             updateTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
@@ -47,12 +52,60 @@ namespace billiards
 
         public void update(object sender, EventArgs e)
         {
-            ball.update(balls, true);
-            ball1.update(balls, false);
-            ball2.update(balls, false);
-            lbl.Content = (Convert.ToInt32(ball.X), Convert.ToInt32(ball.Y));
+            var newVelocities = new Dictionary<int, Vector>();
+
+            foreach (Ball ball in balls)
+            {
+                ball.update(balls);
+            }
+
+            List<Tuple<Ball, Ball>> collidedBalls = Ball.allCollisions(balls);
+            List<Ball> ballsCopy = new List<Ball>();
+
+            foreach (Ball ball in balls)
+            {
+                ballsCopy.Add(ball.Clone());
+            }
+
+            Dictionary<int, Vector> allVelocities = new Dictionary<int, Vector>();
+
+            foreach (Tuple<Ball, Ball> collision in collidedBalls)
+            {
+                Dictionary<int, Vector> dict1 = Ball.Collide(collision.Item1, collision.Item2, ballsCopy);// probabaly i need to do collision between copies
+                allVelocities = addDictionaries(allVelocities, dict1);
+            }
+
+            foreach (Ball ball in balls)
+            {
+                foreach (KeyValuePair<int, Vector> pair in allVelocities)
+                {
+                    if (pair.Key == ball.state.number)
+                    {
+                        ball.state.velocity = pair.Value;
+                    }
+                }
+                Canvas.SetLeft(ball.UiElement, ball.state.x);
+                Canvas.SetTop(ball.UiElement, ball.state.y);
+            }
+
+            lbl.Content = (Convert.ToInt32(ball.state.x), Convert.ToInt32(ball.state.y));
         }
 
+        private Dictionary<int, Vector> addDictionaries (Dictionary<int, Vector> dict1, Dictionary<int, Vector> dict2)
+        {
+            foreach(KeyValuePair<int, Vector> pair in dict1)
+            {
+                if (dict2.ContainsKey(pair.Key))
+                {
+                    dict2[pair.Key] = Vector.Add(pair.Value, dict2[pair.Key]);
+                }
+                else
+                {
+                    dict2.Add(pair.Key, pair.Value);
+                }
+            }
+            return dict2;
+        }
 
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -66,7 +119,7 @@ namespace billiards
             Point mouseUpPoint = e.GetPosition(canvas);
             double XDif = (mouseX - mouseUpPoint.X);
             double YDif = (mouseY - mouseUpPoint.Y);
-            ball.velocity = new Vector(XDif / 15, YDif / 15);
+            ball.state.velocity = new Vector(XDif / 15, YDif / 15);
         }
     }
 }
