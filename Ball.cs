@@ -64,7 +64,7 @@ namespace billiards
 
         public static Dictionary<int, Vector> Collide(Ball b1, Ball b2, List<Ball> ballsCopy)
         {
-            /*Vector n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
+            Vector n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
 
             Vector veloN1 = Vector.Divide(b1.state.velocity, 
                 Math.Sqrt(b1.state.velocity.X * b1.state.velocity.X + b1.state.velocity.Y * b1.state.velocity.Y));
@@ -73,34 +73,37 @@ namespace billiards
                 Math.Sqrt(b2.state.velocity.X * b2.state.velocity.X + b2.state.velocity.Y * b2.state.velocity.Y));
 
             Vector veloN = new Vector();
+            Ball applyBall = null;
 
             if (Double.IsNaN(veloN1.Length))
             {
                 veloN = veloN2;
-            }
-            else if(Double.IsNaN(veloN2.Length))
-            {
-                veloN = veloN1;
+                applyBall = b2;
             }
             else
             {
-                veloN = veloN1.Length > veloN2.Length ? veloN1 : veloN2;
+                if (Double.IsNaN(veloN2.Length))
+                {
+                    veloN = veloN1;
+                    applyBall = b1;
+                }
+                else
+                {
+                    veloN = b1.state.velocity.Length >= b2.state.velocity.Length ? veloN1 : veloN2;
+                    applyBall = b1.state.velocity.Length >= b2.state.velocity.Length ? b1 : b2;
+                }
             }
 
             while (n.Length < radius * 2)
             {
-                if (veloN.Length > veloN1.Length - 0.001 && veloN.Length < veloN1.Length + 0.001)
-                {
-                    b1.state.x -= veloN1.X; // try to change only copy of the ball
-                    b1.state.y -= veloN1.Y;
-                }
-                else
-                {
-                    b2.state.x -= veloN2.X;
-                    b2.state.y -= veloN2.Y;
-                }
+                applyBall.state.x -= veloN.X / 2; // try to change only copy of the ball
+                applyBall.state.y -= veloN.Y / 2;
+
+                Debug.WriteLine("applyBall " + applyBall.state.number);
+
                 n = new Vector(b1.state.x - b2.state.x, b1.state.y - b2.state.y);
-            }*/
+            }
+
             Dictionary<int, Vector> newVelocities = CalculateVelocity(b1, b2);
             return newVelocities;
         }

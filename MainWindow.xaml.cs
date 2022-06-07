@@ -39,6 +39,11 @@ namespace billiards
             balls.Add(ball);
             balls.Add(ball1);
             balls.Add(ball2);
+            balls.Add(new Ball(3, 420, 240, Brushes.Blue));
+            
+            balls.Add(new Ball(4, 380, 160, Brushes.Blue));
+            balls.Add(new Ball(5, 420, 160, Brushes.Blue));
+            balls.Add(new Ball(6, 460, 160, Brushes.Blue));
 
             foreach (Ball ball in balls)
             {
