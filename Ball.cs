@@ -88,7 +88,7 @@ namespace billiards
                     applyBall = b1;
                 }
                 else
-                {
+                { 
                     veloN = b1.state.velocity.Length >= b2.state.velocity.Length ? veloN1 : veloN2;
                     applyBall = b1.state.velocity.Length >= b2.state.velocity.Length ? b1 : b2;
                 }
@@ -210,6 +210,66 @@ namespace billiards
                 }
             }
             return result;
+        }
+
+        public List<Wall> isInWall(List<Wall> walls, Ball ball)
+        {
+            List<Wall> result = new List<Wall>();
+            foreach (Wall wall in walls)
+            {
+                if (wall.x > state.x || wall.y > state.y)
+                {
+                    if (ball.state.x + ball.size > wall.x && ball.state.x + ball.size < wall.x + wall.width &&
+                        ball.state.y + ball.size > wall.y && ball.state.y + ball.size < wall.y + wall.height)
+                    {
+                        result.Add(wall);
+                    }
+                }
+                else
+                {
+                    if (ball.state.x > wall.x && ball.state.x < wall.x + wall.width &&
+                        ball.state.y > wall.y && ball.state.y < wall.y + wall.height)
+                    {
+                        result.Add(wall);
+                    }
+                }
+            }
+            if (result.Count <= 0) { return null; }
+            return result;
+        }
+
+        public void bounce(List<Wall> walls)
+        {
+            Ball ball = this.Clone();
+            List<Wall> collidedWalls = isInWall(walls, this);
+            while (true)
+            {
+                bool br = false;
+                if (collidedWalls == null) {break;}
+
+                foreach (Wall wall in collidedWalls)
+                {
+                    ball.state.x -= this.state.velocity.X;
+                    List<Wall> w = isInWall(collidedWalls, ball);
+                    if (w == null) 
+                    { 
+                        this.state.velocity.X = -state.velocity.X;
+                        br = true;
+                    }
+
+                    ball.state.y -= this.state.velocity.Y;
+                    List<Wall> w1 = isInWall(collidedWalls, ball);
+                    if (w1 == null) 
+                    {
+                        this.state.velocity.Y = -state.velocity.Y;
+                        br = true;
+                    }
+                }
+                if (br)
+                {
+                    break;
+                }
+            }
         }
     }
 }

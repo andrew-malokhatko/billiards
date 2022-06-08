@@ -22,32 +22,70 @@ namespace billiards
         double mouseX = 0;
         double mouseY = 0;
         Ball ball;
-        Ball ball1;
-        Ball ball2;
         List<Ball> balls = new List<Ball>();
-
+        List<Wall> walls = new List<Wall>();
 
         public MainWindow()
         {
             InitializeComponent();
             this.MouseLeftButtonDown += new MouseButtonEventHandler(OnMouseLeftButtonDown);
             this.MouseLeftButtonUp += new MouseButtonEventHandler(OnMouseLeftButtonUp);
-            ball = new Ball(0, 420, 300, Brushes.Black);
-            ball1 = new Ball(1, 400, 200, Brushes.Red);
-            ball2 = new Ball(2, 440, 200, Brushes.Green);
 
+            int thikness = 40;
+            int topOffset = 200;
+            int leftOffset = 250;
+            int tableWidth = 800;
+            int tableHeight = 400;
+            int sizeOf = 500;
+            int lunka = 70;
+
+            Wall wall3 = new Wall(leftOffset + lunka + sizeOf * 2 + lunka, topOffset + lunka, thikness, sizeOf + thikness - 2 * lunka, Wall.CollisionType.Vert); //right wall
+
+            Wall wall4 = new Wall(leftOffset - thikness - lunka, topOffset + lunka, thikness, sizeOf + thikness - 2 * lunka, Wall.CollisionType.Vert); //left wall
+
+            Wall wall6 = new Wall(leftOffset, topOffset + sizeOf, sizeOf, thikness, Wall.CollisionType.Horz); //bottom wall 1
+            Wall wall5 = new Wall(leftOffset + sizeOf + lunka, topOffset + sizeOf, sizeOf, thikness, Wall.CollisionType.Horz); //bottom wall 2
+
+            Wall wall1 = new Wall(leftOffset, topOffset, sizeOf, thikness, Wall.CollisionType.Horz); //top wall 1
+            Wall wall2 = new Wall(leftOffset + sizeOf + lunka, topOffset, sizeOf, thikness, Wall.CollisionType.Horz); //top wall 2
+
+
+            ball = new Ball(0, 300, topOffset + sizeOf/2, Brushes.Black);
             balls.Add(ball);
-            balls.Add(ball1);
-            balls.Add(ball2);
-            balls.Add(new Ball(3, 420, 240, Brushes.Blue));
-            
-            balls.Add(new Ball(4, 380, 160, Brushes.Blue));
-            balls.Add(new Ball(5, 420, 160, Brushes.Blue));
-            balls.Add(new Ball(6, 460, 160, Brushes.Blue));
+
+            balls.Add(new Ball(1, 800, topOffset + sizeOf / 2, Brushes.Yellow));
+
+            balls.Add(new Ball(2, 840, topOffset + 230, Brushes.Blue));
+            balls.Add(new Ball(3, 840, topOffset + 270, Brushes.Blue));
+
+            balls.Add(new Ball(4, 880, topOffset + sizeOf / 2, Brushes.Red));
+            balls.Add(new Ball(5, 880, topOffset + sizeOf / 2 - 40, Brushes.Red));
+            balls.Add(new Ball(6, 880, topOffset + sizeOf / 2 + 40, Brushes.Red));
+
+            balls.Add(new Ball(7, 920, topOffset + sizeOf / 2 - 60, Brushes.Green));
+            balls.Add(new Ball(8, 920, topOffset + sizeOf / 2 - 20, Brushes.Green));
+            balls.Add(new Ball(9, 920, topOffset + sizeOf / 2 + 20, Brushes.Green));
+            balls.Add(new Ball(10, 920, topOffset + sizeOf / 2 + 60, Brushes.Green));
 
             foreach (Ball ball in balls)
             {
                 canvas.Children.Add(ball.UiElement);
+            }
+
+
+
+            walls.Add(wall1);
+            walls.Add(wall2);
+            walls.Add(wall3);
+            walls.Add(wall4);
+            walls.Add(wall5);
+            walls.Add(wall6);
+
+            foreach (Wall wall in walls)
+            {
+                canvas.Children.Add(wall.rect);
+                Canvas.SetTop(wall.rect, wall.y);
+                Canvas.SetLeft(wall.rect, wall.x);
             }
 
             updateTimer.Tick += new EventHandler(update);
@@ -83,12 +121,13 @@ namespace billiards
             foreach (Ball ball in balls)
             {
                 foreach (KeyValuePair<int, Vector> pair in allVelocities)
-                {
+                { 
                     if (pair.Key == ball.state.number)
                     {
                         ball.state.velocity = pair.Value;
                     }
                 }
+                ball.bounce(walls);
                 Canvas.SetLeft(ball.UiElement, ball.state.x);
                 Canvas.SetTop(ball.UiElement, ball.state.y);
             }
@@ -102,7 +141,7 @@ namespace billiards
             {
                 if (dict2.ContainsKey(pair.Key))
                 {
-                    dict2[pair.Key] = Vector.Add(pair.Value, dict2[pair.Key]);
+                    dict2[pair.Key] = Vector.Add(Vector.Divide(pair.Value, 2), Vector.Divide(dict2[pair.Key], 2));
                 }
                 else
                 {

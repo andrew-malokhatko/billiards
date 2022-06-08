@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:billiards"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Canvas x:Name="canvas" Width="800" Height="450">
+        Title="MainWindow" Height="900" Width="1600">
+    <Canvas x:Name="canvas" Width="1600" Height="900">
         <Label x:Name ="lbl" Height="48" Canvas.Left="602" Canvas.Top="90" Width="71"/>
     </Canvas>
 </Window>
